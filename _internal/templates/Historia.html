@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Historial de Partidas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/Historia.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/LogoTransparente.png') }}">
+</head>
+
+<body>
+
+  <div class="table-container">
+    <h2>Historial de Partidas</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Ganador</th>
+          <th>Perdedor</th>
+        </tr>
+      </thead>
+      <tbody id="historia-table-body"></tbody>
+    </table>
+
+    <div id="paginacion"></div>
+
+    <div class="back-btn">
+      <button onclick="window.location.href='/menu'">Volver a Menú</button>
+    </div>
+  </div>
+  <script>
+
+    let currentPage = 1;
+
+    function cargarPagina(pagina) {
+      fetch(`/historia?page=${pagina}`)
+        .then(response => {
+          if (response.status === 403) {
+            throw new Error("No ha iniciado sesión o su sesión ha expirado");
+          }
+          if (!response.ok) {
+            throw new Error("Solicitud fallida");
+          }
+          return response.json();
+        })
+        .then(data => {
+          const tbody = document.getElementById("historia-table-body");
+          tbody.innerHTML = "";
+
+          if (data.partidas.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3">No hay partida histórico</td></tr>`;
+            return;
+          }
+
+          data.partidas.forEach(p => {
+            const row = document.createElement("tr");
+            row.innerHTML = `<td>${p.Fecha}</td><td>${p.Ganador}</td><td>${p.Perdedor}</td>`;
+            tbody.appendChild(row);
+          });
+
+          currentPage = data.page;
+          const totalPages = Math.ceil(data.total / data.limit);
+          const paginacion = document.getElementById("paginacion");
+          paginacion.innerHTML = "";
+
+          if (currentPage > 1) {
+            const btnPrev = document.createElement("button");
+            btnPrev.innerText = "Anterior";
+            btnPrev.onclick = () => cargarPagina(currentPage - 1);
+            paginacion.appendChild(btnPrev);
+          }
+
+          const info = document.createElement("span");
+          info.innerText = ` Página ${currentPage} de ${totalPages} `;
+          paginacion.appendChild(info);
+
+          if (currentPage < totalPages) {
+            const btnNext = document.createElement("button");
+            btnNext.innerText = "Siguiente";
+            btnNext.onclick = () => cargarPagina(currentPage + 1);
+            paginacion.appendChild(btnNext);
+          }
+        })
+        .catch(err => {
+          const tbody = document.getElementById("historia-table-body");
+          tbody.innerHTML = `<tr><td colspan="3">Error en la carga:${err.message}</td></tr>`;
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      cargarPagina(1);
+    });
+  </script>
+
+</body>
+
+</html>

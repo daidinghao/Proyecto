@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Partida</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chessboard-1.0.0.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/Partida.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/LogoTransparente.png') }}">
+</head>
+
+<body data-game-id="{{ game_id }}" data-player-color="{{ my_color }}"
+    data-spectator="{{ 'true' if spectator else 'false' }}">
+
+    <div class="container">
+        <div class="left-panel">
+            <div id="board"></div>
+        </div>
+
+        <!-- Vista del espectador -->
+        {% if spectator %}
+        <div class="right-panel">
+            <div id="end-message" style="color: gray; text-align:center;">Estás viendo el juego y no puedes participar
+                en el juego.</div>
+
+            <div class="section">
+                <div><strong>Tiempo restante de las blancas:</strong> <span id="white-timer">10:00</span></div>
+                <div><strong>Tiempo restante de las negras: </strong> <span id="black-timer">10:00</span></div>
+                <button id="turn">Turno actual: Blanco</button>
+            </div>
+
+            <div class="section">
+                <div class="history-box" id="move-history"
+                    style="height: 120px; overflow-y: auto; background-color: #fff; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                    <!-- Se añadirán movimientos históricos -->
+                </div>
+                <button onclick="confirmExit()">Volver / Salir / Rendirse</button>
+            </div>
+
+            <div class="section">
+                <div id="chat-box"
+                    style="height: 150px; overflow-y: auto; background-color: #fff; border-radius: 6px; padding: 10px; border: 1px solid #ccc; white-space: pre-line; font-family: monospace;">
+                </div>
+            </div>
+
+        </div>
+        {% endif %}
+
+        <!-- Vista del jugador -->
+        {% if not spectator %}
+        <div class="right-panel">
+            <div id="end-message"
+                style="display:none; color:red; font-weight:bold; font-size:16px; text-align:center; margin-top:10px;">
+            </div>
+
+            <div class="section">
+                <div><strong>Tu tiempo restante:</strong> <span id="my-timer">10:00</span></div>
+                <div><strong>Tiempo restante del Oponente:</strong> <span id="opponent-timer">10:00</span></div>
+                <button id="turn">Turno actual: Blanco</button>
+            </div>
+
+            <div class="section">
+                <div class="history-box" id="move-history"
+                    style="height: 120px; overflow-y: auto; background-color: #fff; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                    <!-- Se añadirán movimientos históricos -->
+                </div>
+                <button onclick="confirmExit()">Volver / Salir / Rendirse</button>
+            </div>
+
+            <div class="section">
+                <div id="chat-box"
+                    style="height: 150px; overflow-y: auto; background-color: #fff; border-radius: 6px; padding: 10px; border: 1px solid #ccc; white-space: pre-line; font-family: monospace;">
+                </div>
+                <input id="chat-input" type="text" placeholder="Ingresar mensaje">
+                <input type="submit" value="Enviar mensaje" onclick="sendChat()">
+            </div>
+
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- JS -->
+    <!-- Primero se debe importar jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Lógica del juego -->
+    <script src="{{ url_for('static', filename='js/chess.min.js') }}"></script>
+    <!-- Interfaz de tablero de ajedrez -->
+    <script src="{{ url_for('static', filename='js/chessboard-1.0.0.min.js') }}"></script>
+    <!-- WEBSOCKET -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <script>
+
+        const fakeUserId = Math.floor(Math.random() * 100000);  // Para las pruebas, si hay personas reales disponibles, se les dará prioridad.
+        const socket = io({
+            query: {
+                fake_user_id: fakeUserId,
+            }
+        });
+
+        const game = new Chess();
+
+        let gameStarted = false;
+        let gameEnded = false;
+        let canMove = false;
+        let moveCounter = 1;
+        let currentTurn = null;
+        let board;
+
+        const turnBtn = document.getElementById("turn");
+        const endmessage = document.getElementById("end-message")
+
+        const gameId = document.body.dataset.gameId;
+        const myColor = document.body.dataset.playerColor;
+
+        const isSpectator = document.body.dataset.spectator === "true";
+
+        // Minutero
+
+        let whiteTime = 600;
+        let blackTime = 600;
+
+        let myTime = 600;
+        let opponentTime = 600;
+
+        let timerInterval = null;
+
+        // Combinación de teclas de acceso directo para enviar mensajes rápidamente
+        if (!isSpectator) {
+            document.getElementById("chat-input").addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    const input = document.getElementById("chat-input");
+                    if (input.value.trim() !== "") {
+                        sendChat();
+                    }
+                }
+            });
+        }
+
+        // Unirse a la partida
+
+        // Monitor, se verificará si está en línea de vez en cuando
+        setInterval(() => socket.emit("heartbeat", { game_id: gameId }), 15000);
+
+        // Después de unirse, se transmitirá.
+        socket.emit("join", { game_id: gameId });
+
+        // Confirmar que ambos jugadores están presentes
+        socket.on('both_players_ready', function () {
+            currentTurn = game.turn() === 'w' ? 'w' : 'b';
+            canMove = (currentTurn === myColor);
+            alert("¡Ambos jugadores están listos! ¡La partida puede comenzar!");
+            gameStarted = true;
+
+            if (canMove) {
+                startTimer(true, myTime);
+            } else {
+                startTimer(false, opponentTime);
+            }
+            startSpectatorTimer(currentTurn === 'w');
+            turnBtn.innerText = "Turno actual:" + (currentTurn === 'w' ? "Blanco" : "Negro");
+        });
+
+
+        // Salir
+
+        // Juego terminado
+        function endGame(message) {
+            if (gameEnded) return;
+            clearInterval(timerInterval);
+            gameEnded = true;
+            endmessage.innerText = message;
+            endmessage.style.display = "block";
+        }
+
+        // Deseas salir o rendirte
+        function confirmExit() {
+
+            // Si eres espectador, volverás directamente al menú
+            if (isSpectator) {
+                window.location.href = "/menu";
+                return;
+            }
+
+            // En caso de que la partida no haya comenzado, se te llevará al menú
+            if (!gameStarted) {
+                window.location.href = "/menu";
+                return;
+            }
+
+            // Si la partida ha terminado, se te redirigirá a la página del historial
+            if (gameEnded) {
+                window.location.href = "/historia_view";
+            }
+
+            // La partida está en curso: confirmar si el jugador desea rendirse
+            if (!gameEnded) {
+                if (confirm("¿Estás seguro de que quieres salir de la partida? ¡Esto contará como una rendición!")) {
+                    socket.emit("resign", { game_id: gameId });
+                    window.location.href = "/historia_view";
+                }
+            }
+        }
+
+        // Recibir la rendición del oponente
+        socket.on("opponent_resigned", function () {
+            endGame("¡El oponente se ha rendido, la partida ha terminado!");
+        });
+
+        // Desconexión del oponente
+        socket.on("opponent_disconnected", function () {
+            if (!gameEnded) {
+                endGame("¡El oponente se ha desconectado, la partida ha terminado!");
+            }
+        });
+
+        // Detección de tiempo agotado
+        socket.on("opponent_timeout", function () {
+            endGame("¡El oponente ha agotado el tiempo, la partida ha terminado！")
+        });
+
+        // No se recibió respuesta a tiempo: manejar como fallo por timeout.
+        socket.on("you_lost_by_timeout", function () {
+            endGame("¡Se te acabó el tiempo, la partida ha terminado!");
+        });
+
+
+        // Charlar
+
+        // Enviar mensaje
+        function sendChat() {
+            if (isSpectator) return;
+
+            const input = document.getElementById("chat-input");
+            if (!input) return;
+
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            socket.emit("send_message", {
+                game_id: gameId,
+                message: msg
+            });
+
+            input.value = "";
+        }
+
+        // Recibir mensaje
+        socket.on("new_message", function (data) {
+            const box = document.getElementById("chat-box");
+            box.innerText += `${data.user}: ${data.safe_message}\n`;
+            box.scrollTop = box.scrollHeight;
+        });
+
+        // Cargar mensajes del historial
+        async function loadChatHistory() {
+            const res = await fetch(`/chat_history/${gameId}`);
+            const messages = await res.json();
+            const box = document.getElementById("chat-box");
+            box.innerText = "";  // Limpiar
+
+            for (let msg of messages) {
+                box.innerText += `${msg.user}: ${msg.message}\n`;
+            }
+            box.scrollTop = box.scrollHeight;
+        }
+
+
+        // Tiempo
+
+        // Corrección del formato de tiempo.
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // Actualizar el tiempo de jugadores
+        function updateTimersUI() {
+            if (!isSpectator) {
+                document.getElementById("my-timer").innerText = formatTime(myTime);
+                document.getElementById("opponent-timer").innerText = formatTime(opponentTime);
+            } else {
+                document.getElementById("white-timer").innerText = formatTime(whiteTime);
+                document.getElementById("black-timer").innerText = formatTime(blackTime);
+            }
+
+        }
+
+        // Temporizador compartido para ambos jugadores
+        function startTimer(isMyTimer, initialTime = null) {
+            if (isSpectator || gameEnded) return;
+
+            clearInterval(timerInterval);
+
+            if (initialTime !== null) {
+                if (isMyTimer) {
+                    myTime = initialTime;
+                } else {
+                    opponentTime = initialTime;
+                }
+            }
+
+            timerInterval = setInterval(() => {
+                if (isMyTimer) {
+                    myTime--;
+                } else {
+                    opponentTime--;
+                }
+
+                updateTimersUI();
+
+                if ((isMyTimer && myTime <= 0) || (!isMyTimer && opponentTime <= 0)) {
+                    clearInterval(timerInterval);
+                    if (isMyTimer) {
+                        alert("¡Se te acabó el tiempo!");
+                        socket.emit("timeout", { game_id: gameId });
+                        endGame("¡Se te acabó el tiempo, la partida ha terminado!");
+                    } else {
+                        alert("¡El oponente ha agotado el tiempo!");
+                        endGame("¡El oponente ha agotado el tiempo, la partida ha terminado！");
+                    }
+                }
+            }, 1000);
+        }
+
+        // Temporizador para espectadores
+        function startSpectatorTimer(isWhiteTurn) {
+            clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                if (isWhiteTurn) {
+                    whiteTime--;
+                } else {
+                    blackTime--;
+                }
+
+                updateTimersUI();
+
+                if ((isWhiteTurn && whiteTime <= 0) || (!isWhiteTurn && blackTime <= 0)) {
+                    clearInterval(timerInterval);
+                }
+            }, 1000);
+        }
+
+
+        // Pieza
+
+        // Refrescar el estado del tablero en tiempo real
+        function refreshBoard(positionFen) {
+            board = ChessBoard('board', {
+                draggable: true,
+                dropOffBoard: 'snapback',
+                position: positionFen,
+                pieceTheme: "/static/img/chesspieces/wikipedia/{piece}.png",
+                orientation: myColor === 'w' ? 'white' : 'black',
+                onDragStart: function (source, piece, position, orientation) {
+                    if (!canMove || isSpectator) {
+                        return false;
+                    }
+                },
+                onDrop: onDrop
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await initializeGame();
+        });
+
+        // Inicialización
+        async function initializeGame() {
+            try {
+                const response = await fetch(`/game_state/${gameId}`);
+                const data = await response.json();
+
+                currentTurn = data.current_turn;
+                game.load(data.fen);
+                refreshBoard(data.fen);
+
+                moveCounter = data.moves.length + 1;
+
+                // Restaurar el tiempo
+                myTime = (myColor === 'w') ? data.player1_time : data.player2_time;
+                opponentTime = (myColor === 'w') ? data.player2_time : data.player1_time;
+                updateTimersUI();
+
+                const shouldResume = data.moves.length > 0;
+                if (shouldResume) {
+                    if (currentTurn === myColor) {
+                        startTimer(true, myTime);
+                    } else {
+                        startTimer(false, opponentTime);
+                    }
+
+                    if (isSpectator) {
+                        spectatorLastTurn = currentTurn;
+                        startSpectatorTimer(currentTurn === 'w');
+                    }
+                }
+
+                await loadChatHistory();
+            } catch (error) {
+                console.error("Fallo en la inicialización del tablero:", error);
+            }
+        }
+
+        // Movimiento de la pieza
+        function onDrop(source, target) {
+
+            if (isSpectator || !canMove || gameEnded || currentTurn !== myColor) {
+                return 'snapback';
+            }
+
+            const isPromotion = (myColor === 'w' && source[1] === '7' && target[1] === '8') ||
+                (myColor === 'b' && source[1] === '2' && target[1] === '1');
+
+            const moveStr = source + target + (isPromotion ? 'q' : '');
+
+            const tempMove = game.move({ from: source, to: target, promotion: 'q' });
+            if (!tempMove) return 'snapback';
+            game.undo();
+
+            canMove = false;
+
+            socket.emit("move_piece", {
+                game_id: gameId,
+                move: moveStr,
+                fen: game.fen(),
+                my_time: myTime,
+                opponent_time: opponentTime
+            });
+
+            return;
+        }
+
+        // Procesar los cambios del tablero y reflejarlos en la interfaz
+        socket.on("opponent_move", function (data) {
+            const moveStr = data.move;
+            const fen = data.fen;
+            const finished = data.finished;
+            const result = data.result;
+            currentTurn = data.next_turn;
+
+            // Usar el estado recibido del backend para reconstruir la posición del juego
+            game.load(fen);
+            refreshBoard(fen);
+
+            // Registrar en el historial
+            const historyBox = document.getElementById("move-history");
+            const p = document.createElement("p");
+            p.innerText = `${moveCounter}. ${moveStr}`;
+            moveCounter++;
+            historyBox.appendChild(p);
+            historyBox.scrollTop = historyBox.scrollHeight;
+
+            // Indicador de turno 
+            turnBtn.innerText = "Turno actual：" + (currentTurn === 'w' ? "Blanco" : "Negro");
+
+            // Temporizador del jugador
+            if (!isSpectator) {
+                // Transferir el control del tiempo al siguiente jugador
+                if (currentTurn === myColor) {
+                    canMove = true;
+                    startTimer(true, myTime);
+                } else {
+                    canMove = false;
+                    startTimer(false, opponentTime);
+                }
+            }
+
+            // Temporizador en espectador
+            if (isSpectator) {
+                whiteTime = whiteTime ?? 600;
+                blackTime = blackTime ?? 600;
+
+                clearInterval(timerInterval);
+                startSpectatorTimer(currentTurn === 'w');
+            }
+
+            // Determinar si la partida ha terminad
+            if (data.finished) {
+                if (data.result === "win") {
+                    endGame(data.next_turn !== myColor ? "¡Has ganado!" : "¡Te han hecho jaque mate!");
+                } else if (result === "draw") {
+                    endGame("Empate !");
+                }
+            }
+        });
+
+        socket.on("error", (e) => console.warn("socket error", e));
+    </script>
+
+</body>
+
+</html>
