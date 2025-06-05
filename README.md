@@ -2,12 +2,26 @@
 
 Un juego de ajedrez multijugador en tiempo real (ajedrez internacional) desarrollado en Python y empaquetado como un ejecutable independiente.
 
-## Descarga y Ejecución
+## Método de inicio del proyecto
 
-1. Descomprime la carpeta del proyecto `app.zip`  
-2. Haz doble clic en `app/app.exe` para iniciar el juego
+1. Clonar o descomprimir el archivo del proyecto:
 
-> Asegúrate de que tu sistema operativo sea Windows, preferiblemente Windows 10 o superior.
+Puedes obtener el archivo del proyecto clonando el repositorio o descomprimiendo directamente el paquete comprimido proporcionado.
+
+2. Inicio rápido (no requiere entorno):
+
+Haz doble clic en el archivo `app.exe` para abrir automáticamente el navegador y acceder al proyecto para iniciar el juego.
+
+3. Comenzar a usar el código fuente:
+
+El código fuente del proyecto se encuentra en el paquete comprimido `Ajedrez.zip`. Después de descomprimirlo, usa la terminal o el símbolo del sistema (CMD) para acceder a la carpeta:
+
+   ```bash
+    cd Ajedrez
+    venv\Script\activete
+    python app.py
+   ```
+El proyecto se iniciará y se abrirá en su navegador.
 
 ## Características del Juego
 
@@ -16,9 +30,6 @@ Un juego de ajedrez multijugador en tiempo real (ajedrez internacional) desarrol
 - Sistema de usuario: permite registro e inicio de sesión  
 - Función de chat: comunicación en tiempo real dentro del juego
 
-## Nota para Desarrolladores
-
-Este repositorio contiene únicamente la versión ejecutable. Si deseas obtener el código fuente o participar en el desarrollo, por favor contacta al autor.
 
 ## Información de Contacto
 
