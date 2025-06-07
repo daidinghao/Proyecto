@@ -32,7 +32,7 @@ register_socketio_events(socketio, room_users, room_lock)
 
 if __name__ == "__main__":
     init_db()
-    socketio.run(app, host="0.0.0.0", port=10000, debug=True, use_reloader=False)
+    socketio.run(app, host="0.0.0.0", port=10000, debug=True, use_reloader=False, allow_unsafe_werkzeug=True)
 
 # La autorización ha expirado, no hay nadie contra quien jugar
 def clear_expired_games():
