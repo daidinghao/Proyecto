@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Panel Principal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/Menu.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/LogoTransparente.png') }}">
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+        <div class="panel">
+            <div class="avatar-box">
+                <img src="/static/img/avatar-default.svg" alt="头像" style="width:60px; border-radius:50%;">
+                <div id="user-info" style="display: none; margin-top:10px; font-size:14px;"></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn" onclick="loadUserInfo()">Perfil usuario</button>
+                <button class="btn" onclick="logout()">Cerrar sesión</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="btn-group">
+                <button class="btn" onclick="showCreateOptions()">Crear Partida</button>
+                <button class="btn" onclick="openWaitingGames()">Unirse Partida</button>
+                <button class="btn" onclick="openWatchGames()">Ver Partida Publica</button>
+                <button class="btn" onclick="window.location.href='/historia_view'">History Partida</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="waitingModal"
+        style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); background:white; padding:20px; border:1px solid #ccc; border-radius:8px; z-index:1000;">
+        <h3>Lista de partidos pendientes</h3>
+        <div id="gameList"></div>
+        <button onclick="closeWaitingGames()">Cerrar</button>
+    </div>
+
+    <div id="watchModal"
+        style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); background:white; padding:20px; border:1px solid #ccc; border-radius:8px; z-index:1000;">
+        <h3>Lista de partidos iniciados</h3>
+        <div id="watchgameList"></div>
+        <button onclick="closeWatchGames()">Cerrar</button>
+    </div>
+
+    <script>
+
+        // Crea un enlace de juego e impórtalo al backend para ingresar al tablero de ajedrez
+        function showCreateOptions() {
+            const choice = confirm("¿Estás seguro de que deseas jugar con las blancas? (Si cancelas, jugarás con las negras)");
+            if (choice) {
+                window.location.href = "/crear_partida?color=w";
+            } else {
+                window.location.href = "/crear_partida?color=b";
+            }
+        }
+
+        let currentPage = 1;
+
+        // Aparecerá una lista de partidos, mostrando los partidos que están esperando al oponente. 
+        // Los jugadores pueden utilizar
+        function openWaitingGames(page = 1) {
+            fetch(`/waiting_games?page=${page}&limit=10`)
+                .then(response => response.json())
+                .then(data => {
+                    currentPage = page;
+
+                    const list = document.getElementById("gameList");
+                    list.innerHTML = "";
+
+                    // Mostrar botón de juego
+                    data.games.forEach(g => {
+                        const btn = document.createElement("button");
+                        btn.innerText = `Partida ID: ${g.id}, Creador: ${g.creator_name}, Color: ${g.choice === 'w' ? 'Blanco' : 'Negro'}`;
+                        btn.style.display = "block";
+                        btn.style.margin = "10px";
+                        btn.onclick = () => { window.location.href = "/join_game/" + g.id; };
+                        list.appendChild(btn);
+                    });
+
+                    // Agregar botones de paginación
+                    const controls = document.createElement("div");
+                    controls.style.marginTop = "10px";
+
+                    if (data.page > 1) {
+                        const prev = document.createElement("button");
+                        prev.innerText = "Anterior";
+                        prev.onclick = () => openWaitingGames(page - 1);
+                        controls.appendChild(prev);
+                    }
+
+                    if ((data.page * data.limit) < data.total) {
+                        const next = document.createElement("button");
+                        next.innerText = "Siguiente";
+                        next.onclick = () => openWaitingGames(page + 1);
+                        controls.appendChild(next);
+                    }
+
+                    list.appendChild(controls);
+                    document.getElementById("waitingModal").style.display = "block";
+                });
+        }
+
+        let currentWatchPage = 1;
+
+        // Abre la lista de juegos, mostrando los juegos que han comenzado
+        // para observarlos.
+        function openWatchGames(page = 1) {
+            fetch(`/watch_list?page=${page}&limit=10`)
+                .then(response => response.json())
+                .then(data => {
+                    currentWatchPage = page;
+
+                    const list = document.getElementById("watchgameList");
+                    list.innerHTML = "";
+
+                    data.games.forEach(g => {
+                        const btn = document.createElement("button");
+                        btn.innerText = `Partida ID: ${g.id}, ${g.player1} vs ${g.player2}`;
+                        btn.style.display = "block";
+                        btn.style.margin = "10px";
+                        btn.onclick = () => { window.location.href = "/watch/" + g.id; };
+                        list.appendChild(btn);
+                    });
+
+                    const controls = document.createElement("div");
+                    controls.style.marginTop = "10px";
+
+                    if (data.page > 1) {
+                        const prev = document.createElement("button");
+                        prev.innerText = "Anterior";
+                        prev.onclick = () => openWatchGames(page - 1);
+                        controls.appendChild(prev);
+                    }
+
+                    if ((data.page * data.limit) < data.total) {
+                        const next = document.createElement("button");
+                        next.innerText = "Siguiente";
+                        next.onclick = () => openWatchGames(page + 1);
+                        controls.appendChild(next);
+                    }
+
+                    list.appendChild(controls);
+                    document.getElementById("watchModal").style.display = "block";
+                });
+        }
+
+
+        // Cerrar la lista de partidos
+        function closeWaitingGames() {
+            document.getElementById("waitingModal").style.display = "none";
+        }
+
+        function closeWatchGames() {
+            document.getElementById("watchModal").style.display = "none";
+        }
+
+
+        // Cargando datos de usuario
+        function loadUserInfo() {
+            const infoBox = document.getElementById("user-info");
+
+            if (infoBox.style.display === "block") {
+                infoBox.style.display = "none";
+                return;
+            }
+
+            fetch("/perfil")
+                .then(res => res.json())
+                .then(data => {
+                    const info = `
+                <b>${data.username}</b><br>
+                Email: ${data.email}<br>
+                Registrado: ${data.register_date}<br>
+                Ganar: ${data.wins}, Empate: ${data.draws}, Perder: ${data.losses}
+            `;
+                    infoBox.innerHTML = info;
+                    infoBox.style.display = "block";
+                })
+                .catch(() => {
+                    infoBox.innerText = "Error en la carga";
+                    infoBox.style.display = "block";
+                });
+        }
+
+        // Logout, desconectar
+        function logout() {
+            fetch("/logout")
+                .then(() => window.location.href = "/");
+        }
+
+    </script>
+
+</body>
+
+</html>

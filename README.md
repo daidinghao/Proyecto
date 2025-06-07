@@ -1,0 +1,3 @@
+"# Proyecto_conexion_remoto" 
+
+El propósito de este repositorio de GitHub es implementar el proyecto en la plataforma Render para permitir partidas de ajedrez en tiempo real a través de internet. No solo se utiliza para alojar código, sino también como puente para conexiones remotas y partidas en línea, permitiendo a jugadores de diferentes países o regiones jugar partidas en tiempo real en el navegador.

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Recuperar Cuenta</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/Recuperar.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/LogoTransparente.png') }}">
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Recupera tu Cuenta</h2>
+
+        <form id="recover-form" action="/recuperar" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-box">
+                <div class="input-box">
+                    <input type="email" name="email" placeholder="Confirmar Correo electrónico" required>
+                </div>
+            </div>
+            <div id="error-message" style="color: red; display: none; margin-top: 10px;"></div>
+            <div class="btn-group">
+                <button type="button" class="btn" onclick="window.location.href='/'">Volver</button>
+                <input type="submit" class="btn" value="Enviar recuperación">
+            </div>
+        </form>
+
+    </div>
+    <script>
+        document.getElementById("recover-form").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const formData = new FormData(form);
+            const msgBox = document.getElementById("error-message");
+
+            fetch("/recuperar", {
+                method: "POST",
+                body: formData
+            })
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().then(data => { throw data; });
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    // Este contenido es solo para pruebas; en uso real debe enviarse por email y no mostrarse  
+                    alert("Link de recuperación de contraseña: \n" + data.reset_url);
+                })
+                .catch(err => {
+                    msgBox.innerText = err.message || "No se pudo verificar tu correo electrónico.";
+                    msgBox.style.display = "block";
+                });
+        });
+    </script>
+</body>
+
+</html>

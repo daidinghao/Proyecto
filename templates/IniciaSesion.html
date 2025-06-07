@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Inicia de Sesión</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/IniciaSesion.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/LogoTransparente.png') }}">
+</head>
+
+<body>
+  <img src="static/img/IES_S._Hern._logo_horizontal-TRANSPARENTE.png" alt="Logo" class="logo-top-right">
+  <div class="login-container">
+    <h2>Inicia de Sesion</h2>
+
+    <form id="login-form" action="IniciaSesion" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="login-box">
+        <div class="input-box">
+          <input type="text" name="username" placeholder="Entrada de nombre de usuario" required>
+        </div>
+        <div class="input-box">
+          <input type="password" name="password" placeholder="Entrada de contraseña" required>
+        </div>
+        <div id="error-message" style="color: red; display: none;"></div>
+        <input type="submit" class="login-btn" value="Inicia de Sesion">
+      </div>
+    </form>
+
+    <button class="action-btn" onclick="window.location.href='/registro'">Ir a Registro</button>
+    <button class="action-btn" onclick="window.location.href='/recuperar'">Ir a Recuperar</button>
+  </div>
+
+  <script>
+    document.getElementById("login-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData(form);
+
+      fetch("/IniciaSesion", {
+        method: "POST",
+        body: formData
+      })
+        .then(async res => {
+          const contentType = res.headers.get("content-type") || "";
+          if (!res.ok) {
+            if (contentType.includes("application/json")) {
+              const data = await res.json();
+              throw data;
+            } else {
+              const text = await res.text();
+              throw { message: "Error del servidor: " + text };
+            }
+          }
+          if (contentType.includes("application/json")) {
+            return res.json();
+          } else {
+            throw { message: "Respuesta inesperada del servidor" };
+          }
+        })
+        .then(data => {
+          window.location.href = "/menu";
+        })
+        .catch(err => {
+          const msgBox = document.getElementById("error-message");
+          msgBox.innerText = err.message || "Se produjo un error";
+          msgBox.style.display = "block";
+        });
+    });
+  </script>
+
+</body>
+
+</html>
