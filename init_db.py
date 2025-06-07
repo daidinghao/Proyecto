@@ -1,8 +1,10 @@
 import sqlite3
+from db import get_db_connection
+
 
 # Inicialización de la tabla
 def init_db():
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
 
     # Tabla Usuario

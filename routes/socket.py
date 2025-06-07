@@ -1,6 +1,7 @@
 from flask_socketio import emit, join_room
 from flask import request, session
 from datetime import datetime, timedelta
+from db import get_db_connection
 import sqlite3
 import time
 import chess
@@ -29,7 +30,7 @@ def register_socketio_events(socketio, room_users, room_lock):
             emit("error", {"error": "Datos incompletos"})
             return
 
-        with sqlite3.connect("chess.db") as conn:
+        with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT move FROM moves WHERE game_id=? ORDER BY move_index ASC
@@ -90,7 +91,7 @@ def register_socketio_events(socketio, room_users, room_lock):
         # CheckMate
         if board.is_game_over():
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                with sqlite3.connect("chess.db") as conn:
+                with get_db_connection() as conn:
                     cursor = conn.cursor()
 
                     if board.is_checkmate():
@@ -152,7 +153,7 @@ def register_socketio_events(socketio, room_users, room_lock):
         message_cooldown[user_id] = now
         safe_message = html.escape(message)
 
-        with sqlite3.connect("chess.db") as conn:
+        with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(" SELECT username FROM users WHERE id=?", (user_id,))
             username = cursor.fetchone()[0]
@@ -201,7 +202,7 @@ def register_socketio_events(socketio, room_users, room_lock):
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         loser_id = session.get("user_id")
 
-        with sqlite3.connect("chess.db") as conn:
+        with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT player1_id, player2_id FROM games WHERE id=?", (game_id,))
             players = cursor.fetchone()
@@ -220,7 +221,7 @@ def register_socketio_events(socketio, room_users, room_lock):
         loser_id = session.get("user_id")
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        with sqlite3.connect("chess.db") as conn:
+        with get_db_connection() as conn:
             cursor = conn.cursor()
             
             cursor.execute("SELECT player1_id, player2_id FROM games WHERE id=?", (game_id,))
@@ -276,7 +277,7 @@ def register_socketio_events(socketio, room_users, room_lock):
                 remaining_uid = next(iter(room_users[game_id].keys()))
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                with sqlite3.connect("chess.db") as conn:
+                with get_db_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute("UPDATE games SET winner_id=?, end_time=? WHERE id=?", (remaining_uid, now, game_id))
                     conn.commit()

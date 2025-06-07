@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
+from db import get_db_connection
 import sqlite3
 
 history_bp = Blueprint("history", __name__)
@@ -27,7 +28,7 @@ def historia():
         limit = 10
         offset = (page - 1) * limit
 
-        with sqlite3.connect("chess.db") as conn:
+        with get_db_connection() as conn:
             cursor = conn.cursor()
 
             cursor.execute("""

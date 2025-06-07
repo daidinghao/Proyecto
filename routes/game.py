@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, jsonify, url_for, session
 # from routes.socket import room_users, room_lock
 from flask import current_app
+from db import get_db_connection
 import sqlite3
 import datetime
 import chess
@@ -11,7 +12,7 @@ def get_username_by_id(user_id):
     if not user_id:
         return "Invitado"
 
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT username FROM users WHERE id=?", (user_id,))
         result = cursor.fetchone()
@@ -26,7 +27,7 @@ def partida(game_id):
     
     user_id = session["user_id"]
 
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT player1_id, player2_id, creator_choice, status FROM games WHERE id=?", (game_id,))
         game = cursor.fetchone()
@@ -55,7 +56,7 @@ def crear_partida():
     player1_id = session.get("user_id")
     color = request.args.get("color", "w")  
 
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""INSERT INTO games (player1_id, player2_id, winner_id, end_time, creator_choice, status) VALUES (?, NULL, NULL, NULL, ?, 'waiting')""", (player1_id, color))
         game_id = cursor.lastrowid
@@ -72,7 +73,7 @@ def waiting_games():
     offset = (page - 1) * limit
 
 
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(""" SELECT g.id, u.username, g.creator_choice FROM games g JOIN users u ON g.player1_id = u.id 
                        WHERE g.status = 'waiting' AND g.player2_id IS NULL ORDER BY g.id DESC LIMIT ? OFFSET ?""", (limit, offset))
@@ -101,7 +102,7 @@ def join_game(game_id):
 
     user_id = session.get("user_id")
 
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""UPDATE games SET player2_id=?, status='playing' WHERE id=? AND player2_id IS NULL""", (user_id, game_id))
         conn.commit()
@@ -112,7 +113,7 @@ def join_game(game_id):
 # Sincronizar el estado de la partida tras una recarga
 @game_bp.route("/game_state/<int:game_id>")
 def get_game_state(game_id):
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
 
         cursor.execute("SELECT move FROM moves WHERE game_id=? ORDER BY move_index ASC", (game_id,))
@@ -157,7 +158,7 @@ def watch_list():
     limit = int(request.args.get("limit", 10))
     offset = (page - 1) * limit
 
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""SELECT g.id, u1.username, u2.username FROM games g JOIN users u1 ON g.player1_id = u1.id JOIN users u2 ON g.player2_id = u2.id
                         WHERE g.status = 'playing' ORDER BY g.id DESC LIMIT ? OFFSET ?""", (limit, offset))
@@ -183,7 +184,7 @@ def watch_list():
 # Ir a la vista de espectador.
 @game_bp.route("/watch/<int:game_id>")
 def watch_game(game_id):
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
 
         cursor.execute("""SELECT player1_id, player2_id, winner_id FROM games WHERE id=?""", (game_id,))
@@ -209,7 +210,7 @@ def watch_game(game_id):
 # Cargar mensajes del chat
 @game_bp.route("/chat_history/<int:game_id>")
 def chat_history(game_id):
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             SELECT u.username, m.message

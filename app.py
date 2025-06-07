@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from extensions import limiter, csrf 
 from init_db import init_db
 import atexit
+from db import get_db_connection
 import sqlite3
 import threading
 import webbrowser
@@ -36,7 +37,7 @@ if __name__ == "__main__":
 
 # La autorización ha expirado, no hay nadie contra quien jugar
 def clear_expired_games():
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             DELETE FROM games

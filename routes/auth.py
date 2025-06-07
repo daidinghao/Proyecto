@@ -2,11 +2,11 @@ from flask import Blueprint, render_template, request, redirect, session, url_fo
 from werkzeug.security import generate_password_hash, check_password_hash
 from email.mime.text import MIMEText
 from extensions  import limiter
+from db import get_db_connection
 import sqlite3
 import secrets
 import re
 import smtplib
-
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -37,7 +37,7 @@ def IniciaSesion():
     username = request.form.get("username")
     password = request.form.get("password")
 
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT id, password FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
@@ -77,7 +77,7 @@ def registro():
         if not re.match(r"^[^@]+@[^@]+\.[^@]+$", email):
             return jsonify({"success": False, "message": "El formato del correo electrónico no es válido"}), 400
 
-        with sqlite3.connect("chess.db") as conn:
+        with get_db_connection() as conn:
             cursor = conn.cursor()
 
             # Verificar si el nombre de usuario ya existe
@@ -109,7 +109,7 @@ def recuperar():
     if request.method == "POST":
         email = request.form.get("email")
 
-        with sqlite3.connect("chess.db") as conn:
+        with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
             user = cursor.fetchone()
@@ -119,7 +119,7 @@ def recuperar():
 
         token = secrets.token_urlsafe(32)
 
-        with sqlite3.connect("chess.db") as conn:
+        with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("UPDATE users SET reset_token=? WHERE id=?", (token, user[0]))
             conn.commit()
@@ -143,7 +143,7 @@ def recuperar():
 # Confirmar Link
 @auth_bp.route("/reset_password/<token>", methods=["GET"])
 def reset_password_token(token):
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT email FROM users WHERE reset_token=?", (token,))
         user = cursor.fetchone()
@@ -167,7 +167,7 @@ def reset_password():
     if len(password) < 6:
         return jsonify({"success": False, "message": "La contraseña debe tener al menos 6 caracteres"}), 400
 
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT id FROM users WHERE reset_token=?", (token,))
         user = cursor.fetchone()
@@ -199,7 +199,7 @@ def perfil():
 
     user_id = session["user_id"]
 
-    with sqlite3.connect("chess.db") as conn:
+    with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT username, email, register_date FROM users WHERE id=?", (user_id,))
         user = cursor.fetchone()
