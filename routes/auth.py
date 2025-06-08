@@ -10,15 +10,6 @@ import smtplib
 
 auth_bp = Blueprint("auth", __name__)
 
-
-# Enviar correo (Simulación de consola)
-def send_email(to, subject, body):
-    print("=== Simulando envío de correo ===")
-    print(f"Para: {to}")
-    print(f"Asunto: {subject}")
-    print(f"Cuerpo:\n{body}")
-    print("===============================")
-
 # Página de inicio de sesión
 @auth_bp.route("/")
 def index():
@@ -122,16 +113,15 @@ def recuperar():
         reset_url = url_for("auth.reset_password", token=token, _external=True)
 
         try:
-            send_email(
-                to=email,
-                subject="Restablecimiento de contraseña",
-                body=f"Hola, haz clic en el siguiente enlace para restablecer tu contraseña: {reset_url}"
-            )
+            # Para presentar
+            return jsonify({
+                "success": True,
+                "message": "El enlace de restablecimiento ha sido generado (modo demo)",
+                "reset_url": reset_url
+            })
         except Exception as e:
             return jsonify({"success": False, "message": "Error al enviar el correo. Por favor, inténtalo de nuevo más tarde"}), 500
-        
-        return jsonify({"success": True, "message": "El enlace de restablecimiento ha sido enviado a tu correo electrónico"})
-
+    
     return render_template("Recuperar.html")
 
 
