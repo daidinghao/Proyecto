@@ -68,7 +68,7 @@ body {
     cursor: pointer;
   }
   
-  .paginacion {
+  #paginacion {
     margin-top: 10px;
   }
     
