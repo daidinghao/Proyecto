@@ -20,10 +20,7 @@ def register_socketio_events(socketio, room_users, room_lock):
     @socketio.on("connect")
     def on_connect():
         user_id = request.args.get("user_id")
-        print("🟡 Socket connect received user_id from query:", user_id)
         session["user_id"] = int(user_id) if user_id else None
-        print("🟢 session['user_id'] set to:", session.get("user_id"))
-
 
     # Verificar que el jugador autorizado realice el movimiento
     @socketio.on("move_piece")
@@ -140,8 +137,6 @@ def register_socketio_events(socketio, room_users, room_lock):
     def handle_send_message(data):
         
         import sys
-        print("🟨 DEBUG: data:", data, file=sys.stderr, flush=True)
-        print("🟨 DEBUG: session content:", dict(session), file=sys.stderr, flush=True)
 
         game_id = data.get("game_id")
         message = data.get("message")
@@ -149,9 +144,6 @@ def register_socketio_events(socketio, room_users, room_lock):
 
         now = time.time()
         last_sent = message_cooldown.get(user_id, 0)
-        
-        print("user_id1:", user_id, type(user_id), file=sys.stderr, flush=True)
-        print("data:", data)
 
         if not game_id or not message or not user_id:
             emit("error", {"error": "Formato de mensaje no válido"})
