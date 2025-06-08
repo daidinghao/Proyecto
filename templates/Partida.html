@@ -94,12 +94,7 @@
 
     <script>
 
-        const fakeUserId = Math.floor(Math.random() * 100000);  // Para las pruebas, si hay personas reales disponibles, se les dará prioridad.
-        const socket = io({
-            query: {
-                fake_user_id: fakeUserId,
-            }
-        });
+        const socket = io();
 
         const game = new Chess();
 

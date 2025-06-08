@@ -169,9 +169,11 @@ def register_socketio_events(socketio, room_users, room_lock):
         
         game_id = str(data.get("game_id"))
         
-        # Activar el modo de depuración que admite fake_user_id (se prioriza la sesión real).
-        user_id = session.get("user_id") or data.get("fake_user_id")
-
+        user_id = session.get("user_id")
+        if not user_id:
+            emit("error", {"error": "Sesión no válida"})
+            return
+        
         if not user_id:
             emit("error", {"error": "Usuario no iniciado sesión"})
             return

@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.secret_key = 'super_secret'
 app.config["SECRET_KEY"] = "tnA_Rs3lKzQ8b12xPB8x2Dm9ZoZrVyYzPGFgR3LhdGPAoken"
 
-socketio = SocketIO(app, async_mode="threading")
+socketio = SocketIO(app, manage_session=True, cors_allowed_origins="*")
 room_users = {}
 room_lock = Lock()
 
