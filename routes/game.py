@@ -19,7 +19,7 @@ def get_username_by_id(user_id):
         return result[0] if result else "Usuario desconocido"
 
 
-# Vista del tabler
+# Vista del tabla
 @game_bp.route("/partida/<int:game_id>")
 def partida(game_id):
     if "user_id" not in session:
@@ -32,10 +32,10 @@ def partida(game_id):
         cursor.execute("SELECT player1_id, player2_id, creator_choice, status FROM games WHERE id=%s", (game_id,))
         game = cursor.fetchone()
 
-        player1_id, player2_id, creator_choice, status = game
-
         if not game:
             return "La partida no existe"
+
+        player1_id, player2_id, creator_choice, status = game
 
         if status == 'finished':
             return "La partida ha terminado"
