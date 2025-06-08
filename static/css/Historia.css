@@ -67,3 +67,8 @@ body {
     border-radius: 6px;
     cursor: pointer;
   }
+  
+  .paginacion {
+    margin-top: 10px;
+  }
+    
