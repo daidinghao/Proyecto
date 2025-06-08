@@ -5,7 +5,6 @@ from db import get_db_connection
 def init_db():
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("DROP TABLE IF EXISTS messages, moves, games, users CASCADE")
 
     # Tabla Usuario
     cursor.execute("""

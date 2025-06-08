@@ -50,7 +50,8 @@
                 })
                 .then(data => {
                     // Este contenido es solo para pruebas; en uso real debe enviarse por email y no mostrarse  
-                    alert("Link de recuperación de contraseña: \n" + data.reset_url);
+                    alert("enlace en el console \n" + "Link de recuperación de contraseña: \n" + data.reset_url);
+                    console.log(data.reset_url);
                 })
                 .catch(err => {
                     msgBox.innerText = err.message || "No se pudo verificar tu correo electrónico.";
