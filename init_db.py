@@ -12,7 +12,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username VARCHAR(20) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
+        password VARCHAR(1024) NOT NULL,
         email VARCHAR(255) NOT NULL,
         register_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         reset_token VARCHAR(100)
