@@ -110,18 +110,15 @@ def recuperar():
             cursor.execute("UPDATE users SET reset_token=? WHERE id=?", (token, user[0]))
             conn.commit()
 
-        reset_url = url_for("auth.reset_password", token=token, _external=True)
+        reset_url = url_for("auth.reset_password_token", token=token, _external=True)
 
-        try:
-            # Para presentar
-            return jsonify({
+        # Para presentar
+        return jsonify({
                 "success": True,
                 "message": "El enlace de restablecimiento ha sido generado (modo demo)",
                 "reset_url": reset_url
-            })
-        except Exception as e:
-            return jsonify({"success": False, "message": "Error al enviar el correo. Por favor, inténtalo de nuevo más tarde"}), 500
-    
+        })
+  
     return render_template("Recuperar.html")
 
 
