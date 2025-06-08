@@ -157,6 +157,9 @@ def register_socketio_events(socketio, room_users, room_lock):
             cursor = conn.cursor()
             cursor.execute(" SELECT username FROM users WHERE id=%s", (user_id,))
             username = cursor.fetchone()[0]
+            print("game_id",game_id)
+            print("user_id",user_id)
+            print("safe_message"safe_message)
             cursor.execute("""INSERT INTO messages (game_id, user_id, message) VALUES (%s, %s, %s)""", (game_id, user_id, safe_message))
             conn.commit()
 
