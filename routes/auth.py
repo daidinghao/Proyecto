@@ -11,18 +11,13 @@ import smtplib
 auth_bp = Blueprint("auth", __name__)
 
 
-# Enviar correo
+# Enviar correo (Simulación de consola)
 def send_email(to, subject, body):
-    msg = MIMEText(body, "plain", "utf-8")
-    msg["Subject"] = subject
-    msg["From"] = "ejemplo@gmail.com"
-    msg["To"] = to
-
-    server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-    server.login("your_email", "your_password")
-    server.sendmail(msg["From"], [to], msg.as_string())
-    server.quit()
-
+    print("=== Simulando envío de correo ===")
+    print(f"Para: {to}")
+    print(f"Asunto: {subject}")
+    print(f"Cuerpo:\n{body}")
+    print("===============================")
 
 # Página de inicio de sesión
 @auth_bp.route("/")
