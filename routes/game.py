@@ -14,7 +14,7 @@ def get_username_by_id(user_id):
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT username FROM users WHERE id=?", (user_id,))
+        cursor.execute("SELECT username FROM users WHERE id=%s", (user_id,))
         result = cursor.fetchone()
         return result[0] if result else "Usuario desconocido"
 
@@ -29,7 +29,7 @@ def partida(game_id):
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT player1_id, player2_id, creator_choice, status FROM games WHERE id=?", (game_id,))
+        cursor.execute("SELECT player1_id, player2_id, creator_choice, status FROM games WHERE id=%s", (game_id,))
         game = cursor.fetchone()
 
         player1_id, player2_id, creator_choice, status = game
@@ -58,7 +58,7 @@ def crear_partida():
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""INSERT INTO games (player1_id, player2_id, winner_id, end_time, creator_choice, status) VALUES (?, NULL, NULL, NULL, ?, 'waiting')""", (player1_id, color))
+        cursor.execute("""INSERT INTO games (player1_id, player2_id, winner_id, end_time, creator_choice, status) VALUES (%s, NULL, NULL, NULL, %s, 'waiting')""", (player1_id, color))
         game_id = cursor.lastrowid
         conn.commit()
 
@@ -76,7 +76,7 @@ def waiting_games():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(""" SELECT g.id, u.username, g.creator_choice FROM games g JOIN users u ON g.player1_id = u.id 
-                       WHERE g.status = 'waiting' AND g.player2_id IS NULL ORDER BY g.id DESC LIMIT ? OFFSET ?""", (limit, offset))
+                       WHERE g.status = 'waiting' AND g.player2_id IS NULL ORDER BY g.id DESC LIMIT %s OFFSET %s""", (limit, offset))
         games = cursor.fetchall()
 
         cursor.execute("""SELECT COUNT(*) FROM games WHERE status = 'waiting' AND player2_id IS NULL""")
@@ -104,7 +104,7 @@ def join_game(game_id):
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""UPDATE games SET player2_id=?, status='playing' WHERE id=? AND player2_id IS NULL""", (user_id, game_id))
+        cursor.execute("""UPDATE games SET player2_id=%s, status='playing' WHERE id=%s AND player2_id IS NULL""", (user_id, game_id))
         conn.commit()
 
     return redirect(url_for("game.partida", game_id=game_id))   
@@ -116,16 +116,16 @@ def get_game_state(game_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        cursor.execute("SELECT move FROM moves WHERE game_id=? ORDER BY move_index ASC", (game_id,))
+        cursor.execute("SELECT move FROM moves WHERE game_id=%s ORDER BY move_index ASC", (game_id,))
         moves = [row[0] for row in cursor.fetchall()]
 
         cursor.execute("""
             SELECT player1_id, player2_id, player1_time, player2_time
-            FROM games WHERE id=?
+            FROM games WHERE id=%s
         """, (game_id,))
         row = cursor.fetchone()
         if not row:
-            return jsonify({"error": "对局不存在"}), 404
+            return jsonify({"error": "La partida no existe"}), 404
 
         p1_id, p2_id, p1_timep, p2_timep = row
         p1_time = 600
@@ -161,7 +161,7 @@ def watch_list():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""SELECT g.id, u1.username, u2.username FROM games g JOIN users u1 ON g.player1_id = u1.id JOIN users u2 ON g.player2_id = u2.id
-                        WHERE g.status = 'playing' ORDER BY g.id DESC LIMIT ? OFFSET ?""", (limit, offset))
+                        WHERE g.status = 'playing' ORDER BY g.id DESC LIMIT %s OFFSET %s""", (limit, offset))
         games = cursor.fetchall()
 
         cursor.execute("""
@@ -187,7 +187,7 @@ def watch_game(game_id):
     with get_db_connection() as conn:
         cursor = conn.cursor()
 
-        cursor.execute("""SELECT player1_id, player2_id, winner_id FROM games WHERE id=?""", (game_id,))
+        cursor.execute("""SELECT player1_id, player2_id, winner_id FROM games WHERE id=%s""", (game_id,))
         game = cursor.fetchone()
 
         player1_id, player2_id, winner_id = game
@@ -216,7 +216,7 @@ def chat_history(game_id):
             SELECT u.username, m.message
             FROM messages m
             JOIN users u ON m.user_id = u.id
-            WHERE m.game_id=?
+            WHERE m.game_id=%s
             ORDER BY m.timestamp ASC
         """, (game_id,))
         records = cursor.fetchall()

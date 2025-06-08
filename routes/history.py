@@ -40,15 +40,15 @@ def historia():
                 JOIN users u1 ON g.player1_id = u1.id
                 JOIN users u2 ON g.player2_id = u2.id
                 LEFT JOIN users uw ON g.winner_id = uw.id
-                WHERE (g.player1_id = ? OR g.player2_id = ?) AND g.end_time IS NOT NULL
+                WHERE (g.player1_id = %s OR g.player2_id = %s) AND g.end_time IS NOT NULL
                 ORDER BY g.end_time DESC
-                LIMIT ? OFFSET ?
+                LIMIT %s OFFSET %s
             """, (user_id, user_id, limit, offset))
             rows = cursor.fetchall()
             
             cursor.execute("""
                     SELECT COUNT(*) FROM games
-                    WHERE (player1_id=? OR player2_id=?) AND end_time IS NOT NULL
+                    WHERE (player1_id=%s OR player2_id=%s) AND end_time IS NOT NULL
                 """, (user_id, user_id))
             total = cursor.fetchone()[0]    
 

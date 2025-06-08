@@ -25,7 +25,7 @@ def IniciaSesion():
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, password FROM users WHERE username = ?", (username,))
+        cursor.execute("SELECT id, password FROM users WHERE username = %s", (username,))
         user = cursor.fetchone()
 
         if not user:
@@ -67,20 +67,20 @@ def registro():
             cursor = conn.cursor()
 
             # Verificar si el nombre de usuario ya existe
-            cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+            cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
             if cursor.fetchone():
                 return jsonify({"success": False, "message": "El nombre de usuario ya existe"}), 400
 
             # Verificar si el email ya existe
-            cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+            cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
             if cursor.fetchone():
                 return jsonify({"success": False, "message": "Este correo electrónico ya está registrado"}), 400
 
             # Insertar usuario nuevo
             hashed_pw = generate_password_hash(password)
             cursor.execute("""
-                INSERT INTO users (username, password, email, register_date)
-                VALUES (?, ?, ?, datetime('now'))
+                INSERT INTO users (username, password, email)
+                VALUES (%s, %s, %s)
             """, (username, hashed_pw, email))
             conn.commit()
 
@@ -97,7 +97,7 @@ def recuperar():
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+            cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
             user = cursor.fetchone()
 
         if not user:
@@ -107,7 +107,7 @@ def recuperar():
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("UPDATE users SET reset_token=? WHERE id=?", (token, user[0]))
+            cursor.execute("UPDATE users SET reset_token=%s WHERE id=%s", (token, user[0]))
             conn.commit()
 
         reset_url = url_for("auth.reset_password_token", token=token, _external=True)
@@ -127,7 +127,7 @@ def recuperar():
 def reset_password_token(token):
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT email FROM users WHERE reset_token=?", (token,))
+        cursor.execute("SELECT email FROM users WHERE reset_token=%s", (token,))
         user = cursor.fetchone()
 
     if not user:
@@ -151,14 +151,14 @@ def reset_password():
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE reset_token=?", (token,))
+        cursor.execute("SELECT id FROM users WHERE reset_token=%s", (token,))
         user = cursor.fetchone()
 
         if not user:
             return jsonify({"success": False, "message": "El enlace no es válido o ha expirado"}), 403
 
         hashed_pw = generate_password_hash(password)
-        cursor.execute("UPDATE users SET password=?, reset_token=NULL WHERE id=?", (hashed_pw, user[0]))
+        cursor.execute("UPDATE users SET password=%s, reset_token=NULL WHERE id=%s", (hashed_pw, user[0]))
         conn.commit()
 
     return jsonify({"success": True, "message": "La contraseña ha sido restablecida correctamente"})
@@ -183,16 +183,16 @@ def perfil():
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT username, email, register_date FROM users WHERE id=?", (user_id,))
+        cursor.execute("SELECT username, email, register_date FROM users WHERE id=%s", (user_id,))
         user = cursor.fetchone()
 
         cursor.execute("""
             SELECT 
-                COUNT(*) FILTER (WHERE winner_id = ?) AS wins,
+                COUNT(*) FILTER (WHERE winner_id = %s) AS wins,
                 COUNT(*) FILTER (WHERE winner_id IS NULL AND end_time IS NOT NULL) AS draws,
-                COUNT(*) FILTER (WHERE (player1_id = ? OR player2_id = ?) AND winner_id IS NOT NULL AND winner_id != ?) AS losses
+                COUNT(*) FILTER (WHERE (player1_id = %s OR player2_id = %s) AND winner_id IS NOT NULL AND winner_id != %s) AS losses
             FROM games
-            WHERE (player1_id = ? OR player2_id = ?) AND end_time IS NOT NULL
+            WHERE (player1_id = %s OR player2_id = %s) AND end_time IS NOT NULL
         """, (user_id, user_id, user_id, user_id, user_id, user_id))
         stats = cursor.fetchone()
 

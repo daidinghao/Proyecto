@@ -33,7 +33,7 @@ def register_socketio_events(socketio, room_users, room_lock):
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT move FROM moves WHERE game_id=? ORDER BY move_index ASC
+                SELECT move FROM moves WHERE game_id=%s ORDER BY move_index ASC
             """, (game_id,))
             moves = [row[0] for row in cursor.fetchall()]
 
@@ -61,16 +61,16 @@ def register_socketio_events(socketio, room_users, room_lock):
         
         # Guardar el tiempo restante del jugado
         try:
-            cursor.execute("SELECT player1_id, player2_id FROM games WHERE id=?", (game_id,))
+            cursor.execute("SELECT player1_id, player2_id FROM games WHERE id=%s", (game_id,))
             row = cursor.fetchone()
             if row is None:
                 emit("error", {"error": "El partida no existe"})
                 return
             p1_id, p2_id = row
             if player_id == p1_id:
-                cursor.execute("UPDATE games SET player1_time=?, player2_time=? WHERE id=?", (my_time, opponent_time, game_id))
+                cursor.execute("UPDATE games SET player1_time=%s, player2_time=%s WHERE id=%s", (my_time, opponent_time, game_id))
             else:
-                cursor.execute("UPDATE games SET player2_time=?, player1_time=? WHERE id=?", (my_time, opponent_time, game_id))
+                cursor.execute("UPDATE games SET player2_time=%s, player1_time=%s WHERE id=%s", (my_time, opponent_time, game_id))
             conn.commit()
 
         except Exception as e:
@@ -81,7 +81,7 @@ def register_socketio_events(socketio, room_users, room_lock):
         try:
             cursor.execute("""
                 INSERT INTO moves (game_id, move, move_index, player_id)
-                VALUES (?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s)
             """, (game_id, move_uci, len(moves), player_id))
             conn.commit()
         except Exception as e:
@@ -102,10 +102,10 @@ def register_socketio_events(socketio, room_users, room_lock):
                                 loser_id = uid
                                 break
                         winner_id = p1_id if p2_id == loser_id else p2_id
-                        cursor.execute("UPDATE games SET winner_id=?, end_time=?, status='finished' WHERE id=?", (winner_id, now, game_id))
+                        cursor.execute("UPDATE games SET winner_id=%s, end_time=%s, status='finished' WHERE id=%s", (winner_id, now, game_id))
 
                     elif board.is_stalemate() or board.is_insufficient_material() or board.can_claim_draw():
-                        cursor.execute("UPDATE games SET winner_id=NULL, end_time=?, status='finished' WHERE id=?", (now, game_id))
+                        cursor.execute("UPDATE games SET winner_id=NULL, end_time=%s, status='finished' WHERE id=%s", (now, game_id))
 
                     conn.commit()
 
@@ -155,9 +155,9 @@ def register_socketio_events(socketio, room_users, room_lock):
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(" SELECT username FROM users WHERE id=?", (user_id,))
+            cursor.execute(" SELECT username FROM users WHERE id=%s", (user_id,))
             username = cursor.fetchone()[0]
-            cursor.execute("""INSERT INTO messages (game_id, user_id, message) VALUES (?, ?, ?)""", (game_id, user_id, safe_message))
+            cursor.execute("""INSERT INTO messages (game_id, user_id, message) VALUES (%s, %s, %s)""", (game_id, user_id, safe_message))
             conn.commit()
 
         emit("new_message", {"user": username, "safe_message": message}, to=str(game_id))
@@ -204,10 +204,10 @@ def register_socketio_events(socketio, room_users, room_lock):
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT player1_id, player2_id FROM games WHERE id=?", (game_id,))
+            cursor.execute("SELECT player1_id, player2_id FROM games WHERE id=%s", (game_id,))
             players = cursor.fetchone()
             winner_id = players[0] if players[1] == loser_id else players[1]
-            cursor.execute("UPDATE games SET winner_id=?, end_time=?, status='finished' WHERE id=?", (winner_id, now, game_id))
+            cursor.execute("UPDATE games SET winner_id=%s, end_time=%s, status='finished' WHERE id=%s", (winner_id, now, game_id))
             conn.commit()
             
         emit("opponent_resigned", {}, to=game_id, skip_sid=request.sid)
@@ -224,12 +224,12 @@ def register_socketio_events(socketio, room_users, room_lock):
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
-            cursor.execute("SELECT player1_id, player2_id FROM games WHERE id=?", (game_id,))
+            cursor.execute("SELECT player1_id, player2_id FROM games WHERE id=%s", (game_id,))
             players = cursor.fetchone()
             
             winner_id = players[0] if players[1] == loser_id else players[1]
             
-            cursor.execute("UPDATE games SET winner_id=?, end_time=?, status='finished' WHERE id=?", (winner_id, now, game_id))
+            cursor.execute("UPDATE games SET winner_id=%s, end_time=%s, status='finished' WHERE id=%s", (winner_id, now, game_id))
             conn.commit()
 
         emit("opponent_timeout", {}, to=game_id, skip_sid=request.sid)
@@ -268,7 +268,7 @@ def register_socketio_events(socketio, room_users, room_lock):
             if user_id and user_id in room_users[game_id]:
                 room_users[game_id].pop(user_id)
 
-            cursor.execute("SELECT winner_id, end_time FROM games WHERE id=?", (game_id,))
+            cursor.execute("SELECT winner_id, end_time FROM games WHERE id=%s", (game_id,))
             row = cursor.fetchone()
             if row and row[0] is not None and row[1] is not None:
                 return
@@ -279,7 +279,7 @@ def register_socketio_events(socketio, room_users, room_lock):
 
                 with get_db_connection() as conn:
                     cursor = conn.cursor()
-                    cursor.execute("UPDATE games SET winner_id=?, end_time=? WHERE id=?", (remaining_uid, now, game_id))
+                    cursor.execute("UPDATE games SET winner_id=%s, end_time=%s WHERE id=%s", (remaining_uid, now, game_id))
                     conn.commit()
 
                 emit("opponent_disconnected", {}, to=game_id)
