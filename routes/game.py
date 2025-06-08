@@ -58,7 +58,7 @@ def crear_partida():
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""INSERT INTO games (player1_id, player2_id, winner_id, end_time, creator_choice, status) VALUES (%s, NULL, NULL, NULL, %s, 'waiting')""", (player1_id, color))
+        cursor.execute("""INSERT INTO games (player1_id, player2_id, winner_id, end_time, creator_choice, status) VALUES (%s, NULL, NULL, NULL, %s, 'waiting') RETURNING id""", (player1_id, color))
         game_id = cursor.lastrowid
         conn.commit()
 
