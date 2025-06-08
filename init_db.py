@@ -57,7 +57,7 @@ def init_db():
         id SERIAL PRIMARY KEY,
         game_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
-        message VARCHAR(1000) NOT NULL,
+        message TEXT NOT NULL,
         timestamp VARCHAR(20) DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(game_id) REFERENCES games(id),
         FOREIGN KEY(user_id) REFERENCES users(id)

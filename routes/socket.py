@@ -269,20 +269,23 @@ def register_socketio_events(socketio, room_users, room_lock):
         with room_lock:
             if user_id and user_id in room_users[game_id]:
                 room_users[game_id].pop(user_id)
-
-            cursor.execute("SELECT winner_id, end_time FROM games WHERE id=%s", (game_id,))
-            row = cursor.fetchone()
-            if row and row[0] is not None and row[1] is not None:
-                return
             
-            if len(room_users[game_id]) == 1:
-                remaining_uid = next(iter(room_users[game_id].keys()))
-                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute("SELECT winner_id, end_time FROM games WHERE id=%s", (game_id,))
+                row = cursor.fetchone()
+                if row and row[0] is not None and row[1] is not None:
+                    return
+                
+                if len(room_users[game_id]) == 1:
+                    remaining_uid = next(iter(room_users[game_id].keys()))
+                    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                with get_db_connection() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("UPDATE games SET winner_id=%s, end_time=%s WHERE id=%s", (remaining_uid, now, game_id))
-                    conn.commit()
+                    with get_db_connection() as conn:
+                        cursor = conn.cursor()
+                        cursor.execute("UPDATE games SET winner_id=%s, end_time=%s WHERE id=%s", (remaining_uid, now, game_id))
+                        conn.commit()
 
                 emit("opponent_disconnected", {}, to=game_id)
 
