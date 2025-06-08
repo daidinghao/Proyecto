@@ -2,6 +2,7 @@ from flask_socketio import emit, join_room
 from flask import request, session
 from datetime import datetime, timedelta
 from db import get_db_connection
+from flask import request
 import sqlite3
 import time
 import chess
@@ -11,7 +12,15 @@ last_heartbeat = {}
 message_cooldown = {}
 sid_to_user = {}
 
+
+
 def register_socketio_events(socketio, room_users, room_lock):
+
+    # Cuando el usuario establece una conexión Socket.IO, el user_id enviado por el front-end se escribe en la sesión Flask en el lado del servidor.
+    @socketio.on("connect")
+    def on_connect():
+        user_id = request.args.get("user_id")
+        session["user_id"] = int(user_id) if user_id else None
 
     # Verificar que el jugador autorizado realice el movimiento
     @socketio.on("move_piece")
@@ -152,14 +161,16 @@ def register_socketio_events(socketio, room_users, room_lock):
 
         message_cooldown[user_id] = now
         safe_message = html.escape(message)
+            
+        print("game_id",game_id)
+        print("user_id",user_id)
+        print("safe_message",safe_message)
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(" SELECT username FROM users WHERE id=%s", (user_id,))
             username = cursor.fetchone()[0]
-            print("game_id",game_id)
-            print("user_id",user_id)
-            print("safe_message",safe_message)
+            
             cursor.execute("""INSERT INTO messages (game_id, user_id, message) VALUES (%s, %s, %s)""", (game_id, user_id, safe_message))
             conn.commit()
 
@@ -294,3 +305,5 @@ def register_socketio_events(socketio, room_users, room_lock):
 
             if not room_users[game_id]:
                 room_users.pop(game_id)
+
+    

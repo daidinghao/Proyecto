@@ -95,15 +95,10 @@
     <script>
 
         const socket = io({
-            withCredentials: true
-        });
-
-        socket.on("connect", () => {
-            console.log("✅ Connected to socket:", socket.id);
-        });
-
-        socket.on("connect_error", (err) => {
-            console.error("❌ Socket connection failed:", err);
+            withCredentials: true,
+            query: {
+                user_id: "{{ session['user_id'] }}"
+            }
         });
 
         const game = new Chess();
