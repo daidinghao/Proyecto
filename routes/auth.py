@@ -149,6 +149,12 @@ def reset_password():
     if len(password) < 6:
         return jsonify({"success": False, "message": "La contraseña debe tener al menos 6 caracteres"}), 400
 
+    if len(password) > 13:
+        return jsonify({"success": False, "message": "La contraseña debe tener al mayor 13 caracteres"}), 400
+    
+    if not any(c.isalpha() for c in password) or not any(c.isdigit() for c in password):
+        return jsonify({"success": False, "message": "La contraseña debe contener letras y números"}), 400
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT id FROM users WHERE reset_token=%s", (token,))
@@ -161,8 +167,7 @@ def reset_password():
         cursor.execute("UPDATE users SET password=%s, reset_token=NULL WHERE id=%s", (hashed_pw, user[0]))
         conn.commit()
 
-    return jsonify({"success": True, "message": "La contraseña ha sido restablecida correctamente"})
-
+    return redirect(url_for("auth.index"))
 
 # Ir a Menu
 @auth_bp.route("/menu")
