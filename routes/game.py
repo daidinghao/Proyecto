@@ -59,7 +59,7 @@ def crear_partida():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""INSERT INTO games (player1_id, player2_id, winner_id, end_time, creator_choice, status) VALUES (%s, NULL, NULL, NULL, %s, 'waiting') RETURNING id""", (player1_id, color))
-        game_id = cursor.lastrowid
+        game_id = cursor.fetchone()[0]
         conn.commit()
 
     return redirect(url_for("game.partida", game_id=game_id))   
