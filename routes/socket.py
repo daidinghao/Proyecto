@@ -143,6 +143,8 @@ def register_socketio_events(socketio, room_users, room_lock):
         now = time.time()
         last_sent = message_cooldown.get(user_id, 0)
         
+        print("user_id1:", user_id, type(user_id))
+
         if not game_id or not message or not user_id:
             emit("error", {"error": "Formato de mensaje no válido"})
             return
@@ -162,9 +164,7 @@ def register_socketio_events(socketio, room_users, room_lock):
         message_cooldown[user_id] = now
         safe_message = html.escape(message)
 
-        print("game_id",game_id)
-        print("user_id:", user_id, type(user_id))
-        print("safe_message",safe_message)
+        print("user_id2:", user_id, type(user_id))
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
