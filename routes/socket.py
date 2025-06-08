@@ -164,7 +164,7 @@ def register_socketio_events(socketio, room_users, room_lock):
         message_cooldown[user_id] = now
         safe_message = html.escape(message)
 
-        print("user_id2:", user_id, type(user_id))
+        print("user_id3:", user_id, type(user_id))
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
