@@ -161,9 +161,9 @@ def register_socketio_events(socketio, room_users, room_lock):
 
         message_cooldown[user_id] = now
         safe_message = html.escape(message)
-            
+
         print("game_id",game_id)
-        print("user_id",user_id)
+        print("user_id:", user_id, type(user_id))
         print("safe_message",safe_message)
 
         with get_db_connection() as conn:
