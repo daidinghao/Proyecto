@@ -71,3 +71,19 @@ input[type="password"] {
 .action-btn:hover {
   background-color: #6d4a4a;
 }
+
+@media (max-width: 600px) {
+  .logo-top-right {
+    top: 10px;
+    right: 10px;
+    height: 80px;
+  }
+
+  .login-container {
+    padding: 20px;
+  }
+
+  .login-box {
+    padding: 20px;
+  }
+}

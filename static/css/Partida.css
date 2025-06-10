@@ -116,10 +116,8 @@ textarea {
         height: auto;
     }
 
-    .left-panel,
-    .right-panel {
-        width: 100%;
-        max-width: none;
+    .left-panel {
+        margin-bottom: 20px;
     }
 
     #board {
@@ -133,6 +131,8 @@ textarea {
         max-height: none;
         overflow: visible;
         padding: 10px;
+        margin: 0 auto;
+        max-width: 500px;
     }
 
     .section {

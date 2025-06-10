@@ -136,8 +136,6 @@ def register_socketio_events(socketio, room_users, room_lock):
     @socketio.on('send_message')
     def handle_send_message(data):
         
-        import sys
-
         game_id = data.get("game_id")
         message = data.get("message")
         user_id = session.get("user_id")

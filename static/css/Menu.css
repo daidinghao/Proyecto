@@ -22,7 +22,6 @@ body {
 }
 
 .panel {
-  flex: 1;
   margin: 10px;
   background-color: rgba(244, 244, 244, 0.95);
   border-radius: 10px;
@@ -31,6 +30,15 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+.panel-left {
+  flex: 1;
+}
+
+.panel-right {
+  flex: 2;
+}
+
 
 .btn-group {
   display: flex;
@@ -74,3 +82,29 @@ body {
   background: none;
 }
 
+@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .panel {
+    width: 100%;
+    margin: 10px 0;
+  }
+
+  .panel-left,
+  .panel-right {
+    flex: none;
+    width: 100%;
+  }
+
+  .btn-group {
+    gap: 30px;
+  }
+
+  .avatar-box {
+    width: 100%;
+    height: auto;
+  }
+}

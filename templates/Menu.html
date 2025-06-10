@@ -13,18 +13,18 @@
 <body>
 
     <div class="dashboard-container">
-        <div class="panel">
+        <div class="panel panel-left">
             <div class="avatar-box">
                 <img src="/static/img/avatar-default.svg" alt="头像" style="width:60px; border-radius:50%;">
                 <div id="user-info" style="display: none; margin-top:10px; font-size:14px;"></div>
             </div>
             <div class="btn-group">
-                <button class="btn" onclick="loadUserInfo()">Perfil usuario</button>
+                <button class="btn" onclick="loadUserInfo()">Perfil</button>
                 <button class="btn" onclick="logout()">Cerrar sesión</button>
             </div>
         </div>
 
-        <div class="panel">
+        <div class="panel panel-right">
             <div class="btn-group">
                 <button class="btn" onclick="showCreateOptions()">Crear Partida</button>
                 <button class="btn" onclick="openWaitingGames()">Unirse Partida</button>
