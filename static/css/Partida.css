@@ -110,17 +110,26 @@ textarea {
 }
 
 @media (max-width: 768px) {
+    html,
+    body {
+        height: auto;
+        overflow: auto;
+    }
+
     .container {
         flex-direction: column;
         align-items: center;
-        height: auto;
-        overflow: visible; 
+        height: auto !important;
+        overflow: visible !important;
+        padding-bottom: 30px;
     }
 
     .left-panel {
         width: 100%;
-        max-width: 100%;
+        display: flex;
         height: auto;
+        max-width: 100%;
+        justify-content: center;
         margin-bottom: 20px;
     }
 
@@ -138,6 +147,7 @@ textarea {
         padding: 10px;
         margin: 0 auto;
         max-width: 500px;
+        width: 100%;
     }
 
     .section {
