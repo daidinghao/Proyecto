@@ -160,8 +160,10 @@ def watch_list():
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""SELECT g.id, u1.username, u2.username FROM games g JOIN users u1 ON g.player1_id = u1.id JOIN users u2 ON g.player2_id = u2.id
-                        WHERE g.status = 'playing' ORDER BY g.id DESC LIMIT %s OFFSET %s""", (limit, offset))
+        cursor.execute("""SELECT g.id, u1.username, u2.username 
+                        FROM games g JOIN users u1 ON g.player1_id = u1.id JOIN users u2 ON g.player2_id = u2.id
+                        WHERE g.status = 'playing' AND g.winner_id IS NULL AND g.end_time IS NULL
+                        ORDER BY g.id DESC LIMIT %s OFFSET %s""", (limit, offset))
         games = cursor.fetchall()
 
         cursor.execute("""
@@ -196,7 +198,7 @@ def watch_game(game_id):
             return "La partida no existe"
 
         if winner_id:
-            return "La partida no existe"
+            return redirect(url_for("menu"))
 
         username = get_username_by_id(session.get("user_id"))
 
