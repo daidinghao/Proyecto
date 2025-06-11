@@ -10,6 +10,8 @@ body {
     padding: 30px;
     max-width: 1000px;
     margin: auto;
+    overflow-x: auto;
+    box-sizing: border-box;
   }
 
   h2 {
@@ -23,6 +25,8 @@ body {
     background-color: white;
     border-radius: 8px;
     overflow: hidden;
+    table-layout: fixed;
+    word-wrap: break-word;
   }
 
   th, td {
@@ -71,4 +75,15 @@ body {
   #paginacion {
     margin-top: 10px;
   }
+
+  @media (max-width: 480px) {
+  .table-container {
+    padding: 10px;
+  }
+
+  th, td {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
     
